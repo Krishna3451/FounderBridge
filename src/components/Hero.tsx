@@ -16,15 +16,19 @@ export const Hero = () => {
           <Button 
             size="lg" 
             asChild 
-            className="w-full sm:w-auto text-xl px-12 py-8 rounded-xl hover:scale-105 transition-transform"
+            className="w-full sm:w-auto text-xl px-12 py-8 rounded-xl bg-black text-white hover:bg-white hover:text-black hover:border-black border-2 border-transparent transition-all"
           >
-            <Link to="/signup">I'm a Founder</Link>
+            <Link to="/signup/recruiter">I'm a Founder</Link>
           </Button>
-          <Button size="lg" variant="outline" asChild className="w-full sm:w-auto">
-            <Link to="/signup">I'm a Developer</Link>
+          <Button 
+            size="lg"
+            asChild 
+            className="w-full sm:w-auto text-xl px-12 py-8 rounded-xl bg-black text-white hover:bg-white hover:text-black hover:border-black border-2 border-transparent transition-all"
+          >
+            <Link to="/signup/candidate">I'm a Developer</Link>
           </Button>
         </div>
-        <div className="mt-16 text-sm text-gray-500">
+        <div className="mt-40 text-sm text-gray-500">
           Join our community of founders and developers building the next generation of startups
         </div>
       </div>

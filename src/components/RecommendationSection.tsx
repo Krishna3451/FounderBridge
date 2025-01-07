@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowUpRight, Sparkles, FileText, MousePointerClick, Star } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const RecommendationSection = () => {
   return (
@@ -52,7 +53,9 @@ export const RecommendationSection = () => {
 
           <div className="mt-12 flex gap-4 justify-center">
             <Button variant="outline" className="rounded-full px-8">Learn more</Button>
-            <Button className="rounded-full px-8">Sign up</Button>
+            <Button asChild className="rounded-full px-8">
+              <Link to="/signup/candidate">Sign up</Link>
+            </Button>
           </div>
         </div>
       </div>
@@ -105,7 +108,9 @@ export const RecommendationSection = () => {
 
           <div className="mt-12 flex gap-4 justify-center">
             <Button variant="outline" className="rounded-full px-8">Learn more</Button>
-            <Button className="rounded-full px-8">Sign up</Button>
+            <Button asChild className="rounded-full px-8">
+              <Link to="/signup/recruiter">Sign up</Link>
+            </Button>
           </div>
         </div>
       </div>
