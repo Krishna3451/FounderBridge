@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { FaGithub } from "react-icons/fa";
 import { HiOutlineAcademicCap, HiOutlineBriefcase } from "react-icons/hi";
 import { BsPencil, BsBookmark, BsBookmarkFill } from "react-icons/bs";
-
+import { Navbar } from "@/components/Navbar";
 interface Job {
   id: string;
   companyName: string;
@@ -80,6 +80,8 @@ export const DeveloperDashboard = () => {
   });
 
   return (
+    <>
+    <Navbar/>    
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -298,6 +300,7 @@ export const DeveloperDashboard = () => {
         </div>
       </div>
     </motion.div>
+    </>
   );
 };
 

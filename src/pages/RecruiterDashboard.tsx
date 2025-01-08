@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { BsBuilding, BsCurrencyDollar, BsPencil, BsBriefcase } from "react-icons/bs";
 import { HiOutlineDocumentText, HiOutlineUsers } from "react-icons/hi";
 import { motion } from "framer-motion";
+import { Navbar } from "@/components/Navbar";
 
 interface Candidate {
   id: string;
@@ -52,6 +53,8 @@ export const RecruiterDashboard = () => {
   const filteredCandidates = candidates.filter(candidate => candidate.status === activeTab);
 
   return (
+    <>
+    <Navbar/>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -231,6 +234,7 @@ export const RecruiterDashboard = () => {
         </div>
       </div>
     </motion.div>
+    </>
   );
 };
 

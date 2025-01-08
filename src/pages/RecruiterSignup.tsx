@@ -1,3 +1,4 @@
+import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,19 +17,14 @@ import { Link } from "react-router-dom";
 
 export const RecruiterSignup = () => {
   return (
+    <>
+    <Navbar/>
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 px-4 sm:px-6 lg:px-8"
     >
-      <div className="max-w-7xl mx-auto mb-8">
-        <Link 
-          to="/" 
-          className="inline-block text-2xl font-extrabold text-primary tracking-tight hover:opacity-80 transition-opacity"
-        >
-          FounderBridge
-        </Link>
-      </div>
+      
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         {/* Welcome Section */}
@@ -223,6 +219,7 @@ export const RecruiterSignup = () => {
         </motion.div>
       </div>
     </motion.div>
+    </>
   );
 };
 
