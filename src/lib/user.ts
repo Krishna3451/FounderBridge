@@ -31,6 +31,7 @@ interface ApplicationData {
   recruiterId: string;
   coverLetter: string;
   resume: string;
+  whatsappNumber: string;
   status: 'pending' | 'accepted' | 'rejected';
   createdAt: any;
   updatedAt: any;
@@ -130,17 +131,17 @@ export const getActiveJobs = async () => {
   }
 };
 
-export const submitApplication = async (applicationData: Omit<ApplicationData, 'status' | 'createdAt' | 'updatedAt'>) => {
+export const submitApplication = async (data: Omit<ApplicationData, 'status' | 'createdAt' | 'updatedAt'>) => {
   try {
     const auth = getAuth();
-    const currentUser = auth.currentUser;
-    
-    if (!currentUser) {
-      throw new Error('You must be signed in to submit an application');
+    const user = auth.currentUser;
+
+    if (!user) {
+      return { success: false, error: 'You must be signed in to submit an application' };
     }
 
     // Verify the user is a developer
-    const developerRef = doc(db, 'developers', currentUser.uid);
+    const developerRef = doc(db, 'developers', user.uid);
     const developerSnap = await getDoc(developerRef);
     
     if (!developerSnap.exists()) {
@@ -148,34 +149,34 @@ export const submitApplication = async (applicationData: Omit<ApplicationData, '
     }
 
     // Get the idea details to get the recruiterId
-    const ideaRef = doc(db, 'ideas', applicationData.ideaId);
-    const ideaDoc = await getDoc(ideaRef);
+    const ideaRef = doc(db, 'ideas', data.ideaId);
+    const ideaSnap = await getDoc(ideaRef);
     
-    if (!ideaDoc.exists()) {
-      throw new Error('Job posting not found');
+    if (!ideaSnap.exists()) {
+      return { success: false, error: 'Job posting not found' };
     }
 
-    const ideaData = ideaDoc.data();
-    const timestamp = serverTimestamp();
+    const ideaData = ideaSnap.data();
     
-    const applicationWithMetadata = {
-      ...applicationData,
-      developerId: currentUser.uid, // Ensure the correct developerId is set
-      recruiterId: ideaData.recruiterId,
-      status: 'pending',
-      createdAt: timestamp,
-      updatedAt: timestamp
-    };
-
+    // Create the application
     const applicationsRef = collection(db, 'applications');
-    const docRef = await addDoc(applicationsRef, applicationWithMetadata);
-    
-    return { success: true, applicationId: docRef.id };
+    await addDoc(applicationsRef, {
+      developerId: user.uid,
+      recruiterId: ideaData.recruiterId,
+      ideaId: data.ideaId,
+      coverLetter: data.coverLetter,
+      resume: data.resume,
+      whatsappNumber: data.whatsappNumber,
+      status: 'pending',
+      createdAt: serverTimestamp()
+    });
+
+    return { success: true };
   } catch (error) {
     console.error('Error submitting application:', error);
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : 'Failed to submit application' 
+      error: error instanceof Error ? error.message : 'Failed to submit application'
     };
   }
 };

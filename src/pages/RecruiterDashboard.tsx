@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { BsBuilding, BsCurrencyDollar, BsPencil, BsBriefcase } from "react-icons/bs";
 import { HiOutlineDocumentText, HiOutlineUsers } from "react-icons/hi";
+import { FaWhatsapp } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/Navbar";
 import { useLocation } from "react-router-dom";
@@ -31,7 +32,7 @@ interface Candidate {
   experience: string;
   skills: string[];
   appliedDate: string;
-  status: 'pending' | 'reviewing' | 'accepted' | 'rejected';
+  status: string;
   coverLetter: string;
   resume: string;
   email: string;
@@ -40,6 +41,7 @@ interface Candidate {
   degree: string;
   graduationYear: string;
   photoURL: string;
+  whatsappNumber: string;
 }
 
 interface RecruiterProfile {
@@ -177,7 +179,8 @@ export const RecruiterDashboard = () => {
               university: developerData.university || '',
               degree: developerData.degree || '',
               graduationYear: developerData.graduationYear || '',
-              photoURL: developerData.photoURL || ''
+              photoURL: developerData.photoURL || '',
+              whatsappNumber: appData.whatsappNumber || ''
             };
           })
         );
@@ -809,6 +812,19 @@ export const RecruiterDashboard = () => {
                 <div>
                   <h3 className="text-xl font-semibold">{selectedCandidate.name}</h3>
                   <p className="text-gray-500">{selectedCandidate.email}</p>
+                  {selectedCandidate.whatsappNumber && (
+                    <p className="text-gray-500 flex items-center space-x-2">
+                      <FaWhatsapp className="text-green-500 text-lg" />
+                      <a 
+                        href={`https://wa.me/${selectedCandidate.whatsappNumber.replace(/\+/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline flex items-center"
+                      >
+                        {selectedCandidate.whatsappNumber}
+                      </a>
+                    </p>
+                  )}
                 </div>
               </div>
 
