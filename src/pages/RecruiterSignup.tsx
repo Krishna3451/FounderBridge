@@ -15,7 +15,7 @@ import { motion } from "framer-motion";
 import { BsBuilding, BsCurrencyDollar } from "react-icons/bs";
 import { HiOutlineDocumentText } from "react-icons/hi";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { useToast } from "@/components/ui/use-toast";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
@@ -42,11 +42,34 @@ export const RecruiterSignup = () => {
   const auth = getAuth();
   
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const checkUserAndRedirect = async () => {
+      const user = auth.currentUser;
       if (!user) {
         navigate('/auth/recruiter', { replace: true });
         return;
       }
+
+      // Check if user already has a profile
+      try {
+        const db = getFirestore();
+        const userRef = doc(db, 'recruiters', user.uid);
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists()) {
+          // User already has a profile, redirect to dashboard
+          navigate('/recruiterdashboard', { 
+            state: { uid: user.uid },
+            replace: true 
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking user profile:', error);
+      }
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      checkUserAndRedirect();
     });
 
     return () => unsubscribe();

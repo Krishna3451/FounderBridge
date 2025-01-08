@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
@@ -43,12 +43,35 @@ export const DeveloperSignup = () => {
   const auth = getAuth();
   
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const checkUserAndRedirect = async () => {
+      const user = auth.currentUser;
       if (!user) {
         console.log('No authenticated user found');
         navigate('/auth/developer', { replace: true });
         return;
       }
+
+      // Check if user already has a profile
+      try {
+        const db = getFirestore();
+        const userRef = doc(db, 'developers', user.uid);
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists()) {
+          // User already has a profile, redirect to dashboard
+          navigate('/developerdashboard', { 
+            state: { uid: user.uid },
+            replace: true 
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking user profile:', error);
+      }
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      checkUserAndRedirect();
     });
 
     return () => unsubscribe();
