@@ -12,19 +12,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
-interface Job {
-  id: string;
-  companyName: string;
-  role: string;
-  location: string;
-  type: string;
-  salary: string;
-  equity: string;
-  techStack: string[];
-  description: string;
-  postedDate: string;
-}
+import { getActiveJobs, submitApplication } from "@/lib/user";
 
 interface DeveloperProfile {
   firstName: string;
@@ -40,16 +28,42 @@ interface DeveloperProfile {
   photoURL: string;
 }
 
-export const DeveloperDashboard = () => {
+interface Idea {
+  id: string;
+  recruiterId: string;
+  uid: string;
+  cofounderRole: string;
+  companyName: string;
+  companySize: string;
+  companyWebsite: string;
+  email: string;
+  equityRange: string;
+  experienceRequired: string;
+  fundingStage: string;
+  ideaDescription: string;
+  idealCandidate: string;
+  photoURL: string;
+  responsibilities: string;
+  roleDescription: string;
+  salaryRange: string;
+  status: string;
+  techStack: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const DeveloperDashboard = () => {
   const location = useLocation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'all' | 'saved' | 'applied'>('all');
-  const [savedJobs, setSavedJobs] = useState<string[]>([]);
+  const [savedIdeas, setSavedIdeas] = useState<string[]>([]);
   const [profile, setProfile] = useState<DeveloperProfile | null>(null);
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<DeveloperProfile | null>(null);
+  const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
+  const [applicationData, setApplicationData] = useState({ coverLetter: "", resume: "" });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,15 +88,6 @@ export const DeveloperDashboard = () => {
           setProfile(profileSnap.data() as DeveloperProfile);
         }
 
-        // Fetch job listings
-        const jobsRef = collection(db, 'jobs');
-        const jobsSnap = await getDocs(jobsRef);
-        const jobsList = jobsSnap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Job[];
-
-        setJobs(jobsList);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -97,6 +102,27 @@ export const DeveloperDashboard = () => {
 
     fetchData();
   }, [location.state?.uid, toast]);
+
+  // Fetch ideas
+  useEffect(() => {
+    const fetchIdeas = async () => {
+      try {
+        console.log('Starting to fetch ideas...'); // Debug log
+        const ideasData = await getActiveJobs();
+        console.log('Received ideas data:', ideasData); // Debug log
+        setIdeas(ideasData);
+      } catch (error) {
+        console.error('Error fetching ideas:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch ideas. Please try again.",
+          variant: "destructive"
+        });
+      }
+    };
+
+    fetchIdeas();
+  }, [toast]);
 
   if (loading || !profile) {
     return (
@@ -115,17 +141,17 @@ export const DeveloperDashboard = () => {
     );
   }
 
-  const toggleSaveJob = (jobId: string) => {
-    setSavedJobs(prev => 
-      prev.includes(jobId) 
-        ? prev.filter(id => id !== jobId)
-        : [...prev, jobId]
+  const toggleSaveIdea = (ideaId: string) => {
+    setSavedIdeas(prev => 
+      prev.includes(ideaId) 
+        ? prev.filter(id => id !== ideaId)
+        : [...prev, ideaId]
     );
   };
 
-  const filteredJobs = jobs.filter(job => {
-    if (activeTab === 'saved') return savedJobs.includes(job.id);
-    // Add applied jobs filter when you have that data
+  const filteredIdeas = ideas.filter(idea => {
+    if (activeTab === 'saved') return savedIdeas.includes(idea.id);
+    // Add applied ideas filter when you have that data
     return true;
   });
 
@@ -148,6 +174,50 @@ export const DeveloperDashboard = () => {
       toast({
         title: "Error",
         description: "Failed to update profile. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const renderTechStack = (techStack: string) => {
+    if (!techStack) return null;
+    return techStack.split(',').map((tech, index) => (
+      <span
+        key={index}
+        className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium"
+      >
+        {tech.trim()}
+      </span>
+    ));
+  };
+
+  const handleSubmitApplication = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedIdea || !location.state?.uid) return;
+
+    try {
+      const result = await submitApplication({
+        ideaId: selectedIdea.id,
+        developerId: location.state.uid,
+        coverLetter: applicationData.coverLetter,
+        resume: applicationData.resume,
+      });
+
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Application submitted successfully",
+        });
+        setSelectedIdea(null);
+        setApplicationData({ coverLetter: "", resume: "" });
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Error submitting application:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit application. Please try again.",
         variant: "destructive"
       });
     }
@@ -252,7 +322,7 @@ export const DeveloperDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Jobs Section */}
+          {/* Ideas Section */}
           <div className="lg:col-span-2 space-y-6">
             {/* Tabs */}
             <Card className="border-none shadow-xl bg-white">
@@ -260,7 +330,7 @@ export const DeveloperDashboard = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent flex items-center gap-2">
                     <HiOutlineBriefcase className="text-primary" />
-                    Job Opportunities
+                    Startup Ideas
                   </h2>
                   <div className="flex gap-2">
                     {(['all', 'saved', 'applied'] as const).map((status) => (
@@ -278,7 +348,7 @@ export const DeveloperDashboard = () => {
                         {status}
                         {activeTab === status && (
                           <span className="ml-2 bg-white/20 px-1.5 py-0.5 rounded-full text-xs">
-                            {filteredJobs.length}
+                            {filteredIdeas.length}
                           </span>
                         )}
                       </Button>
@@ -288,9 +358,9 @@ export const DeveloperDashboard = () => {
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  {filteredJobs.map((job) => (
+                  {filteredIdeas.map((idea) => (
                     <motion.div
-                      key={job.id}
+                      key={idea.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="bg-white p-6 rounded-lg shadow-xl border border-gray-100 hover:border-primary/50 transition-all"
@@ -298,16 +368,16 @@ export const DeveloperDashboard = () => {
                       <div className="flex flex-col space-y-4">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="text-xl font-semibold text-gray-900">{job.role}</h3>
-                            <p className="text-gray-600 mt-1">{job.companyName}</p>
+                            <h3 className="text-xl font-semibold text-gray-900">{idea.cofounderRole}</h3>
+                            <p className="text-gray-600 mt-1">{idea.companyName}</p>
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => toggleSaveJob(job.id)}
+                            onClick={() => toggleSaveIdea(idea.id)}
                             className="hover:bg-primary/10"
                           >
-                            {savedJobs.includes(job.id) ? (
+                            {savedIdeas.includes(idea.id) ? (
                               <BsBookmarkFill className="h-5 w-5 text-primary" />
                             ) : (
                               <BsBookmark className="h-5 w-5" />
@@ -316,38 +386,55 @@ export const DeveloperDashboard = () => {
                         </div>
 
                         <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-                          <span>{job.location}</span>
+                          <span>{idea.experienceRequired} years exp</span>
                           <span>•</span>
-                          <span>{job.type}</span>
-                          <span>•</span>
-                          <span>${job.salary}</span>
-                          <span>•</span>
-                          <span>{job.equity}% equity</span>
+                          <span>{idea.fundingStage}</span>
+                          {idea.salaryRange && (
+                            <>
+                              <span>•</span>
+                              <span>${idea.salaryRange}k</span>
+                            </>
+                          )}
+                          {idea.equityRange && (
+                            <>
+                              <span>•</span>
+                              <span>{idea.equityRange}% equity</span>
+                            </>
+                          )}
                         </div>
 
                         <div className="flex flex-wrap gap-2">
-                          {job.techStack.map((tech, index) => (
-                            <span
-                              key={index}
-                              className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium"
-                            >
-                              {tech}
-                            </span>
-                          ))}
+                          {renderTechStack(idea.techStack)}
                         </div>
 
-                        <p className="text-gray-600">{job.description}</p>
+                        <div>
+                          <h4 className="font-semibold text-gray-900 mb-2">Idea Description</h4>
+                          <p className="text-gray-600">{idea.ideaDescription}</p>
+                        </div>
+
+                        {idea.roleDescription && (
+                          <div>
+                            <h4 className="font-semibold text-gray-900 mb-2">Role Description</h4>
+                            <p className="text-gray-600">{idea.roleDescription}</p>
+                          </div>
+                        )}
 
                         <div className="flex justify-between items-center pt-4">
-                          <p className="text-sm text-gray-500">Posted: {job.postedDate}</p>
+                          <div className="flex items-center space-x-2">
+                            <img
+                              src={idea.photoURL}
+                              alt="Recruiter"
+                              className="w-8 h-8 rounded-full"
+                            />
+                            <span className="text-sm text-gray-500">
+                              Posted by {idea.email}
+                            </span>
+                          </div>
                           <div className="flex gap-2">
                             <Button 
-                              variant="outline"
-                              className="hover:bg-primary hover:text-white transition-colors"
+                              className="bg-primary hover:bg-primary/90"
+                              onClick={() => setSelectedIdea(idea)}
                             >
-                              View Details
-                            </Button>
-                            <Button className="bg-primary hover:bg-primary/90">
                               Apply Now
                             </Button>
                           </div>
@@ -355,13 +442,13 @@ export const DeveloperDashboard = () => {
                       </div>
                     </motion.div>
                   ))}
-                  {filteredJobs.length === 0 && (
+                  {filteredIdeas.length === 0 && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       className="bg-white p-8 rounded-lg shadow-xl text-center border border-gray-100"
                     >
-                      <p className="text-gray-500">No jobs found in {activeTab} category.</p>
+                      <p className="text-gray-500">No ideas found in {activeTab} category.</p>
                     </motion.div>
                   )}
                 </div>
@@ -371,6 +458,8 @@ export const DeveloperDashboard = () => {
         </div>
       </div>
     </motion.div>
+
+    {/* Edit Profile Dialog */}
     <Dialog open={isEditing} onOpenChange={setIsEditing}>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -437,8 +526,42 @@ export const DeveloperDashboard = () => {
         </div>
       </DialogContent>
     </Dialog>
-    </>
 
+    {/* Apply Dialog */}
+    <Dialog open={!!selectedIdea} onOpenChange={() => setSelectedIdea(null)}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Apply to {selectedIdea?.companyName}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium">Cover Letter</label>
+            <Textarea
+              value={applicationData.coverLetter}
+              onChange={(e) => setApplicationData(prev => ({...prev, coverLetter: e.target.value}))}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Resume</label>
+            <Textarea
+              value={applicationData.resume}
+              onChange={(e) => setApplicationData(prev => ({...prev, resume: e.target.value}))}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setSelectedIdea(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitApplication}>
+              Submit Application
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 

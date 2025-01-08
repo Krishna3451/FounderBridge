@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider, GithubAuthProvider } from 'firebase/auth'
+import { getFirestore } from 'firebase/firestore'
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -24,6 +25,9 @@ const app = initializeApp(firebaseConfig)
 // Initialize Firebase Authentication and get a reference to the service
 const auth = getAuth(app)
 
+// Initialize Firestore
+const db = getFirestore(app)
+
 // Configure Google Auth Provider with additional scopes
 const googleProvider = new GoogleAuthProvider()
 googleProvider.addScope('profile')
@@ -41,4 +45,4 @@ githubProvider.setCustomParameters({
   redirect_uri: `https://${firebaseConfig.authDomain}/__/auth/handler`
 })
 
-export { auth, googleProvider, githubProvider }
+export { auth, db, googleProvider, githubProvider }
