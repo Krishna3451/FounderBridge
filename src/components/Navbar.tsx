@@ -1,9 +1,18 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuthStore } from "@/store/authStore";
 
 export const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const setSelectedRole = useAuthStore((state) => state.setSelectedRole);
+  const navigate = useNavigate();
+
+  const handleRoleSelect = (role: 'candidate' | 'recruiter') => {
+    setSelectedRole(role);
+    setIsDropdownOpen(false);
+    navigate('/signin');
+  };
 
   return (
     <nav className="border-b bg-white/80 backdrop-blur-sm fixed w-full z-10">
@@ -13,9 +22,11 @@ export const Navbar = () => {
             FounderBridge
           </Link>
           <div className="flex gap-4 items-center">
-            <Button>
-              Login
-            </Button>
+            <Link to="/signin">
+              <Button>
+                Login
+              </Button>
+            </Link>
             <div className="relative">
               <Button onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
                 Sign Up
@@ -24,12 +35,18 @@ export const Navbar = () => {
                 isDropdownOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
               }`}>
                 <div className="py-2">
-                  <Link to="/signup/recruiter" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-500">
+                  <button
+                    onClick={() => handleRoleSelect('recruiter')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-500"
+                  >
                     I'm looking for candidates
-                  </Link>
-                  <Link to="/signup/candidate" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-500">
+                  </button>
+                  <button
+                    onClick={() => handleRoleSelect('candidate')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-500"
+                  >
                     I'm looking for a job
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
