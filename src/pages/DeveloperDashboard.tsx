@@ -63,7 +63,12 @@ const DeveloperDashboard = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<DeveloperProfile | null>(null);
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
-  const [applicationData, setApplicationData] = useState({ coverLetter: "", resume: "" });
+  const [applicationData, setApplicationData] = useState({ 
+    coverLetter: "", 
+    resume: "",
+    whatsappNumber: "" 
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -191,15 +196,14 @@ const DeveloperDashboard = () => {
     ));
   };
 
-  const handleSubmitApplication = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedIdea) return;
-
+  const handleSubmitApplication = async (ideaId: string) => {
     try {
+      setIsSubmitting(true);
       const result = await submitApplication({
-        ideaId: selectedIdea.id,
+        ideaId,
         coverLetter: applicationData.coverLetter,
         resume: applicationData.resume,
+        whatsappNumber: applicationData.whatsappNumber
       });
 
       if (result.success) {
@@ -208,17 +212,23 @@ const DeveloperDashboard = () => {
           description: "Application submitted successfully",
         });
         setSelectedIdea(null);
-        setApplicationData({ coverLetter: "", resume: "" });
+        setApplicationData({ coverLetter: "", resume: "", whatsappNumber: "" });
       } else {
-        throw new Error(result.error);
+        toast({
+          title: "Error",
+          description: result.error || "Failed to submit application",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error submitting application:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to submit application. Please try again.",
+        description: "Failed to submit application. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -527,39 +537,53 @@ const DeveloperDashboard = () => {
     </Dialog>
 
     {/* Apply Dialog */}
-    <Dialog open={!!selectedIdea} onOpenChange={() => setSelectedIdea(null)}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Apply to {selectedIdea?.companyName}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Cover Letter</label>
-            <Textarea
-              value={applicationData.coverLetter}
-              onChange={(e) => setApplicationData(prev => ({...prev, coverLetter: e.target.value}))}
-            />
+    {selectedIdea && (
+      <Dialog open={!!selectedIdea} onOpenChange={() => setSelectedIdea(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Apply for {selectedIdea.companyName}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Cover Letter</label>
+              <Textarea
+                value={applicationData.coverLetter}
+                onChange={(e) => setApplicationData(prev => ({ ...prev, coverLetter: e.target.value }))}
+                placeholder="Write a brief cover letter explaining why you're interested in this opportunity..."
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Resume Link</label>
+              <Input
+                value={applicationData.resume}
+                onChange={(e) => setApplicationData(prev => ({ ...prev, resume: e.target.value }))}
+                placeholder="Paste your resume link here..."
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">WhatsApp Number</label>
+              <Input
+                value={applicationData.whatsappNumber}
+                onChange={(e) => setApplicationData(prev => ({ ...prev, whatsappNumber: e.target.value }))}
+                placeholder="Enter your WhatsApp number with country code (e.g., +91XXXXXXXXXX)"
+                className="mt-1"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setSelectedIdea(null)}>Cancel</Button>
+              <Button 
+                onClick={() => handleSubmitApplication(selectedIdea.id)}
+                disabled={isSubmitting || !applicationData.coverLetter || !applicationData.resume || !applicationData.whatsappNumber}
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Application'}
+              </Button>
+            </div>
           </div>
-
-          <div>
-            <label className="text-sm font-medium">Resume</label>
-            <Textarea
-              value={applicationData.resume}
-              onChange={(e) => setApplicationData(prev => ({...prev, resume: e.target.value}))}
-            />
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setSelectedIdea(null)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmitApplication}>
-              Submit Application
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    )}
     </>
   );
 };
