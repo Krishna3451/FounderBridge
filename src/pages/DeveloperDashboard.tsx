@@ -7,8 +7,11 @@ import { HiOutlineAcademicCap, HiOutlineBriefcase } from "react-icons/hi";
 import { BsPencil, BsBookmark, BsBookmarkFill } from "react-icons/bs";
 import { Navbar } from "@/components/Navbar";
 import { useLocation } from "react-router-dom";
-import { getFirestore, doc, getDoc, collection, query, getDocs } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, collection, query, getDocs, updateDoc } from 'firebase/firestore';
 import { useToast } from "@/components/ui/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Job {
   id: string;
@@ -45,6 +48,8 @@ export const DeveloperDashboard = () => {
   const [profile, setProfile] = useState<DeveloperProfile | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedProfile, setEditedProfile] = useState<DeveloperProfile | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -124,6 +129,30 @@ export const DeveloperDashboard = () => {
     return true;
   });
 
+  const handleProfileUpdate = async () => {
+    if (!editedProfile || !location.state?.uid) return;
+
+    try {
+      const db = getFirestore();
+      const profileRef = doc(db, 'developers', location.state.uid);
+      await updateDoc(profileRef, editedProfile);
+      
+      setProfile(editedProfile);
+      setIsEditing(false);
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <>
     <Navbar/>    
@@ -138,13 +167,6 @@ export const DeveloperDashboard = () => {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
             Developer Dashboard
           </h1>
-          <Button 
-            variant="outline"
-            className="flex items-center gap-2 hover:bg-primary hover:text-white transition-colors"
-          >
-            <HiOutlineBriefcase className="h-4 w-4" />
-            Update Profile
-          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -158,7 +180,11 @@ export const DeveloperDashboard = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hover:bg-primary/10"
+                  className="hover:bg-primary"
+                  onClick={() => {
+                    setEditedProfile(profile);
+                    setIsEditing(true);
+                  }}
                 >
                   <BsPencil className="h-4 w-4" />
                 </Button>
@@ -345,6 +371,72 @@ export const DeveloperDashboard = () => {
         </div>
       </div>
     </motion.div>
+    <Dialog open={isEditing} onOpenChange={setIsEditing}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Profile</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium">First Name</label>
+              <Input
+                value={editedProfile?.firstName}
+                onChange={(e) => setEditedProfile(prev => prev ? {...prev, firstName: e.target.value} : null)}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Last Name</label>
+              <Input
+                value={editedProfile?.lastName}
+                onChange={(e) => setEditedProfile(prev => prev ? {...prev, lastName: e.target.value} : null)}
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium">Experience</label>
+            <Input
+              value={editedProfile?.experience}
+              onChange={(e) => setEditedProfile(prev => prev ? {...prev, experience: e.target.value} : null)}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Skills (comma-separated)</label>
+            <Input
+              value={editedProfile?.skills}
+              onChange={(e) => setEditedProfile(prev => prev ? {...prev, skills: e.target.value} : null)}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">GitHub URL</label>
+            <Input
+              value={editedProfile?.github}
+              onChange={(e) => setEditedProfile(prev => prev ? {...prev, github: e.target.value} : null)}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">Bio</label>
+            <Textarea
+              value={editedProfile?.bio}
+              onChange={(e) => setEditedProfile(prev => prev ? {...prev, bio: e.target.value} : null)}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsEditing(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleProfileUpdate}>
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
     </>
 
   );

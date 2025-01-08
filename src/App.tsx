@@ -24,7 +24,7 @@ function App() {
             <Route path="/signup/developer" element={<DeveloperSignup />} />
             <Route path="/signup/recruiter" element={<RecruiterSignup />} />
             <Route path="/recruiterdashboard" element={<RecruiterDashboard />} />
-            <Route path="/developerdashboard" element={<DeveloperDashboard />} />            <Route path="/recruiterdashboard" element={<RecruiterDashboard />} />
+            <Route path="/developerdashboard" element={<DeveloperDashboard />} />            
 
 
             <Route path="*" element={<Navigate to="/" replace />} />
