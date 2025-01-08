@@ -31,11 +31,19 @@ export function AuthSignup({ userType }: AuthSignupProps) {
         throw new Error('No email provided from authentication provider')
       }
 
+      // Get additional GitHub data if signing in with GitHub
+      let githubUsername = '';
+      if (provider === 'github' && result.user.providerData[0]) {
+        // GitHub provider data includes the username in the displayName
+        githubUsername = result.user.providerData[0].displayName || '';
+      }
+
       const userData = {
         name: result.user.displayName || '',
         email: result.user.email,
         photoURL: result.user.photoURL || '',
-        uid: result.user.uid
+        uid: result.user.uid,
+        github: provider === 'github' ? githubUsername : ''
       }
 
       console.log('Navigating to signup with user data:', userData)

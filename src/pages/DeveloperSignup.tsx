@@ -89,7 +89,7 @@ export const DeveloperSignup = () => {
     experience: '',
     skills: '',
     bio: '',
-    github: '',
+    github: authData.github || '',  
     university: '',
     degree: '',
     graduationYear: '',
