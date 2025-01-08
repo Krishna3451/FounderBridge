@@ -51,12 +51,7 @@ export const RecommendationSection = () => {
             </div>
           </div>
 
-          <div className="mt-12 flex gap-4 justify-center">
-            <Button variant="outline" className="rounded-full px-8">Learn more</Button>
-            <Button asChild className="rounded-full px-8">
-              <Link to="/signup/candidate">Sign up</Link>
-            </Button>
-          </div>
+         
         </div>
       </div>
 
@@ -106,12 +101,7 @@ export const RecommendationSection = () => {
             </div>
           </div>
 
-          <div className="mt-12 flex gap-4 justify-center">
-            <Button variant="outline" className="rounded-full px-8">Learn more</Button>
-            <Button asChild className="rounded-full px-8">
-              <Link to="/signup/recruiter">Sign up</Link>
-            </Button>
-          </div>
+          
         </div>
       </div>
     </section>
