@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -6,6 +6,10 @@ import { FaGithub } from "react-icons/fa";
 import { HiOutlineAcademicCap, HiOutlineBriefcase } from "react-icons/hi";
 import { BsPencil, BsBookmark, BsBookmarkFill } from "react-icons/bs";
 import { Navbar } from "@/components/Navbar";
+import { useLocation } from "react-router-dom";
+import { getFirestore, doc, getDoc, collection, query, getDocs } from 'firebase/firestore';
+import { useToast } from "@/components/ui/use-toast";
+
 interface Job {
   id: string;
   companyName: string;
@@ -19,51 +23,92 @@ interface Job {
   postedDate: string;
 }
 
+interface DeveloperProfile {
+  firstName: string;
+  lastName: string;
+  email: string;
+  experience: string;
+  skills: string;
+  bio: string;
+  github: string;
+  university: string;
+  degree: string;
+  graduationYear: string;
+  photoURL: string;
+}
+
 export const DeveloperDashboard = () => {
+  const location = useLocation();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'all' | 'saved' | 'applied'>('all');
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
+  const [profile, setProfile] = useState<DeveloperProfile | null>(null);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock developer data - replace with actual data from your backend
-  const developerProfile = {
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    experience: "4 years",
-    skills: ["React", "TypeScript", "Node.js", "Python", "AWS"],
-    bio: "Full-stack developer with a passion for building scalable web applications...",
-    github: "https://github.com/johndoe",
-    university: "Stanford University",
-    degree: "Computer Science",
-    graduationYear: "2020"
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const db = getFirestore();
+        const uid = location.state?.uid;
 
-  // Mock job listings - replace with actual data from your backend
-  const jobs: Job[] = [
-    {
-      id: "1",
-      companyName: "Tech Innovations Inc.",
-      role: "Senior Full Stack Developer",
-      location: "San Francisco, CA (Remote)",
-      type: "Full-time",
-      salary: "$120k-160k",
-      equity: "0.5-1.0%",
-      techStack: ["React", "Node.js", "AWS", "TypeScript"],
-      description: "Looking for a senior full-stack developer to join our growing team...",
-      postedDate: "2024-01-08"
-    },
-    {
-      id: "2",
-      companyName: "Future Finance",
-      role: "Frontend Developer",
-      location: "New York (Hybrid)",
-      type: "Full-time",
-      salary: "$100k-130k",
-      equity: "0.25-0.5%",
-      techStack: ["React", "TypeScript", "GraphQL"],
-      description: "Join our fintech startup revolutionizing the banking industry...",
-      postedDate: "2024-01-07"
-    }
-  ];
+        if (!uid) {
+          toast({
+            title: "Error",
+            description: "User ID not found. Please try logging in again.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Fetch developer profile
+        const profileRef = doc(db, 'developers', uid);
+        const profileSnap = await getDoc(profileRef);
+
+        if (profileSnap.exists()) {
+          setProfile(profileSnap.data() as DeveloperProfile);
+        }
+
+        // Fetch job listings
+        const jobsRef = collection(db, 'jobs');
+        const jobsSnap = await getDocs(jobsRef);
+        const jobsList = jobsSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Job[];
+
+        setJobs(jobsList);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data. Please try again.",
+          variant: "destructive"
+        });
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [location.state?.uid, toast]);
+
+  if (loading || !profile) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+              <div className="h-32 bg-gray-200 rounded"></div>
+              <div className="h-64 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   const toggleSaveJob = (jobId: string) => {
     setSavedJobs(prev => 
@@ -124,22 +169,22 @@ export const DeveloperDashboard = () => {
                 {/* Personal Info */}
                 <div className="space-y-2">
                   <h3 className="text-lg font-semibold text-gray-900">
-                    {developerProfile.firstName} {developerProfile.lastName}
+                    {profile.firstName} {profile.lastName}
                   </h3>
-                  <p className="text-gray-600">{developerProfile.email}</p>
-                  <p className="text-gray-600">Experience: {developerProfile.experience}</p>
+                  <p className="text-gray-600">{profile.email}</p>
+                  <p className="text-gray-600">Experience: {profile.experience}</p>
                 </div>
 
                 {/* Skills */}
                 <div className="space-y-2">
                   <h3 className="font-semibold text-gray-900">Skills</h3>
                   <div className="flex flex-wrap gap-2">
-                    {developerProfile.skills.map((skill, index) => (
+                    {profile.skills.split(',').map((skill, index) => (
                       <span
                         key={index}
                         className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium"
                       >
-                        {skill}
+                        {skill.trim()}
                       </span>
                     ))}
                   </div>
@@ -150,9 +195,9 @@ export const DeveloperDashboard = () => {
                   <HiOutlineAcademicCap className="text-primary text-xl mt-1" />
                   <div>
                     <h3 className="font-semibold text-gray-900">Education</h3>
-                    <p className="text-gray-600 mt-1">{developerProfile.university}</p>
-                    <p className="text-gray-600">{developerProfile.degree}</p>
-                    <p className="text-gray-600">Class of {developerProfile.graduationYear}</p>
+                    <p className="text-gray-600 mt-1">{profile.university}</p>
+                    <p className="text-gray-600">{profile.degree}</p>
+                    <p className="text-gray-600">Class of {profile.graduationYear}</p>
                   </div>
                 </div>
 
@@ -162,12 +207,12 @@ export const DeveloperDashboard = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900">GitHub Profile</h3>
                     <a 
-                      href={developerProfile.github}
+                      href={profile.github}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline mt-1 block"
                     >
-                      {developerProfile.github}
+                      {profile.github}
                     </a>
                   </div>
                 </div>
@@ -175,7 +220,7 @@ export const DeveloperDashboard = () => {
                 {/* Bio */}
                 <div className="space-y-2">
                   <h3 className="font-semibold text-gray-900">About</h3>
-                  <p className="text-gray-600">{developerProfile.bio}</p>
+                  <p className="text-gray-600">{profile.bio}</p>
                 </div>
               </div>
             </CardContent>
@@ -301,6 +346,7 @@ export const DeveloperDashboard = () => {
       </div>
     </motion.div>
     </>
+
   );
 };
 

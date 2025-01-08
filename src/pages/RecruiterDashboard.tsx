@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { BsBuilding, BsCurrencyDollar, BsPencil, BsBriefcase } from "react-icons/bs";
 import { HiOutlineDocumentText, HiOutlineUsers } from "react-icons/hi";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/Navbar";
+import { useLocation } from "react-router-dom";
+import { getFirestore, doc, getDoc, collection, query, getDocs } from 'firebase/firestore';
+import { useToast } from "@/components/ui/use-toast";
 
 interface Candidate {
   id: string;
@@ -15,40 +18,104 @@ interface Candidate {
   status: 'pending' | 'reviewing' | 'accepted' | 'rejected';
 }
 
+interface RecruiterProfile {
+  companyName: string;
+  companyWebsite: string;
+  companySize: string;
+  fundingStage: string;
+  equityRange: string;
+  salaryRange: string;
+  roleDescription: string;
+  techStack: string;
+  experienceRequired: string;
+  uid: string;
+  email: string;
+  photoURL: string;
+}
+
 export const RecruiterDashboard = () => {
+  const location = useLocation();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'pending' | 'reviewing' | 'accepted' | 'rejected'>('pending');
+  const [profile, setProfile] = useState<RecruiterProfile | null>(null);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data
-  const recruiterProfile = {
-    companyName: "Tech Innovations Inc.",
-    companyWebsite: "https://example.com",
-    companySize: "11-50",
-    fundingStage: "Seed",
-    equityRange: "0.5-2.0",
-    salaryRange: "80k-120k",
-    roleDescription: "Looking for a full-stack developer with experience in modern web technologies...",
-    techStack: ["React", "Node.js", "Python"],
-    experienceRequired: "3-5"
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const db = getFirestore();
+        const uid = location.state?.uid;
 
-  const candidates: Candidate[] = [
-    {
-      id: "1",
-      name: "John Doe",
-      experience: "4 years",
-      techStack: ["React", "Node.js", "MongoDB"],
-      appliedDate: "2024-01-08",
-      status: 'pending'
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      experience: "5 years",
-      techStack: ["TypeScript", "React", "AWS"],
-      appliedDate: "2024-01-07",
-      status: 'reviewing'
-    }
-  ];
+        if (!uid) {
+          toast({
+            title: "Error",
+            description: "User ID not found. Please try logging in again.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Fetch recruiter profile
+        const profileRef = doc(db, 'recruiters', uid);
+        const profileSnap = await getDoc(profileRef);
+
+        if (profileSnap.exists()) {
+          setProfile(profileSnap.data() as RecruiterProfile);
+        }
+
+        // Fetch candidates (this would be replaced with actual candidate data)
+        // For now, using mock data
+        setCandidates([
+          {
+            id: "1",
+            name: "John Doe",
+            experience: "4 years",
+            techStack: ["React", "Node.js", "MongoDB"],
+            appliedDate: "2024-01-08",
+            status: 'pending'
+          },
+          {
+            id: "2",
+            name: "Jane Smith",
+            experience: "5 years",
+            techStack: ["TypeScript", "React", "AWS"],
+            appliedDate: "2024-01-07",
+            status: 'reviewing'
+          }
+        ]);
+
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data. Please try again.",
+          variant: "destructive"
+        });
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [location.state?.uid, toast]);
+
+  if (loading || !profile) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+              <div className="h-32 bg-gray-200 rounded"></div>
+              <div className="h-64 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   const filteredCandidates = candidates.filter(candidate => candidate.status === activeTab);
 
@@ -99,15 +166,15 @@ export const RecruiterDashboard = () => {
                   <BsBuilding className="text-primary text-xl mt-1" />
                   <div>
                     <h3 className="font-semibold text-gray-900">Company Details</h3>
-                    <p className="text-gray-600 mt-1">{recruiterProfile.companyName}</p>
+                    <p className="text-gray-600 mt-1">{profile.companyName}</p>
                     <a 
-                      href={recruiterProfile.companyWebsite} 
+                      href={profile.companyWebsite} 
                       className="text-primary hover:underline mt-1 block"
                     >
-                      {recruiterProfile.companyWebsite}
+                      {profile.companyWebsite}
                     </a>
-                    <p className="text-gray-600 mt-1">Size: {recruiterProfile.companySize} employees</p>
-                    <p className="text-gray-600">Stage: {recruiterProfile.fundingStage}</p>
+                    <p className="text-gray-600 mt-1">Size: {profile.companySize} employees</p>
+                    <p className="text-gray-600">Stage: {profile.fundingStage}</p>
                   </div>
                 </div>
 
@@ -115,8 +182,8 @@ export const RecruiterDashboard = () => {
                   <BsCurrencyDollar className="text-primary text-xl mt-1" />
                   <div>
                     <h3 className="font-semibold text-gray-900">Compensation</h3>
-                    <p className="text-gray-600 mt-1">Equity: {recruiterProfile.equityRange}%</p>
-                    <p className="text-gray-600">Salary: ${recruiterProfile.salaryRange}</p>
+                    <p className="text-gray-600 mt-1">Equity: {profile.equityRange}%</p>
+                    <p className="text-gray-600">Salary: ${profile.salaryRange}</p>
                   </div>
                 </div>
 
@@ -124,10 +191,10 @@ export const RecruiterDashboard = () => {
                   <HiOutlineDocumentText className="text-primary text-xl mt-1" />
                   <div>
                     <h3 className="font-semibold text-gray-900">Role Requirements</h3>
-                    <p className="text-gray-600 mt-1">{recruiterProfile.roleDescription}</p>
-                    <p className="text-gray-600 mt-2">Experience: {recruiterProfile.experienceRequired} years</p>
+                    <p className="text-gray-600 mt-1">{profile.roleDescription}</p>
+                    <p className="text-gray-600 mt-2">Experience: {profile.experienceRequired} years</p>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {recruiterProfile.techStack.map((tech, index) => (
+                      {profile.techStack.split(',').map((tech, index) => (
                         <span
                           key={index}
                           className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium"
@@ -235,6 +302,7 @@ export const RecruiterDashboard = () => {
       </div>
     </motion.div>
     </>
+
   );
 };
 

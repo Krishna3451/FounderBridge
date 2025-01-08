@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,12 +13,12 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
+import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
 import { FaGithub } from "react-icons/fa";
 import { HiOutlineAcademicCap } from "react-icons/hi";
 import { BsBriefcase } from "react-icons/bs";
-import { Link, useLocation } from "react-router-dom";
-import { Navbar } from "@/components/Navbar";
 
 interface FormData {
   firstName: string;
@@ -28,12 +31,29 @@ interface FormData {
   university: string;
   degree: string;
   graduationYear: string;
+  uid: string;
+  photoURL: string;
 }
 
 export const DeveloperSignup = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const authData = location.state || {};
+  const auth = getAuth();
   
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        console.log('No authenticated user found');
+        navigate('/auth/developer', { replace: true });
+        return;
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth, navigate]);
+
   // Split the name from auth data
   const nameParts = authData.name?.split(' ') || ['', ''];
   const defaultFirstName = nameParts[0];
@@ -49,21 +69,67 @@ export const DeveloperSignup = () => {
     github: '',
     university: '',
     degree: '',
-    graduationYear: ''
+    graduationYear: '',
+    uid: authData.uid || '',
+    photoURL: authData.photoURL || ''
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.id]: e.target.value
-    });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "Please sign in again to complete your profile.",
+          variant: "destructive"
+        });
+        navigate('/auth/developer', { replace: true });
+        return;
+      }
+
+      const db = getFirestore();
+      const userRef = doc(db, 'developers', user.uid);
+      
+      await setDoc(userRef, {
+        ...formData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+
+      toast({
+        title: "Profile Created",
+        description: "Your developer profile has been created successfully!",
+      });
+
+      // Navigate to dashboard
+      navigate('/developerdashboard', { 
+        state: { uid: user.uid },
+        replace: true 
+      });
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Error",
+        description: "There was an error creating your profile. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleInputChange = (field: keyof FormData, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleSelectChange = (value: string, field: keyof FormData) => {
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       [field]: value
-    });
+    }));
   };
 
   const isFormValid = () => {
@@ -137,7 +203,7 @@ export const DeveloperSignup = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <form>
+          <form onSubmit={handleSubmit}>
             <Card className="border-none shadow-xl">
               <CardHeader>
                 <motion.h2 
@@ -171,7 +237,7 @@ export const DeveloperSignup = () => {
                           id="firstName" 
                           placeholder="John" 
                           value={formData.firstName}
-                          onChange={handleInputChange}
+                          onChange={(e) => handleInputChange('firstName', e.target.value)}
                           required
                         />
                       </div>
@@ -181,7 +247,7 @@ export const DeveloperSignup = () => {
                           id="lastName" 
                           placeholder="Doe" 
                           value={formData.lastName}
-                          onChange={handleInputChange}
+                          onChange={(e) => handleInputChange('lastName', e.target.value)}
                           required
                         />
                       </div>
@@ -194,7 +260,7 @@ export const DeveloperSignup = () => {
                         type="email" 
                         placeholder="john@example.com" 
                         value={formData.email}
-                        onChange={handleInputChange}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
                         required
                       />
                     </div>
@@ -220,7 +286,7 @@ export const DeveloperSignup = () => {
                         id="skills" 
                         placeholder="e.g., React, Node.js, Python" 
                         value={formData.skills}
-                        onChange={handleInputChange}
+                        onChange={(e) => handleInputChange('skills', e.target.value)}
                         required
                       />
                     </div>
@@ -232,7 +298,7 @@ export const DeveloperSignup = () => {
                         className="w-full min-h-[100px] p-3 border rounded-md"
                         placeholder="Tell us about yourself..."
                         value={formData.bio}
-                        onChange={handleInputChange}
+                        onChange={(e) => handleInputChange('bio', e.target.value)}
                         required
                       />
                     </div>
@@ -259,7 +325,7 @@ export const DeveloperSignup = () => {
                           className="rounded-l-none" 
                           placeholder="username" 
                           value={formData.github}
-                          onChange={handleInputChange}
+                          onChange={(e) => handleInputChange('github', e.target.value)}
                           required
                         />
                       </div>
@@ -282,7 +348,7 @@ export const DeveloperSignup = () => {
                         id="university" 
                         placeholder="e.g., Stanford University" 
                         value={formData.university}
-                        onChange={handleInputChange}
+                        onChange={(e) => handleInputChange('university', e.target.value)}
                         required
                       />
                     </div>
@@ -293,7 +359,7 @@ export const DeveloperSignup = () => {
                         id="degree" 
                         placeholder="e.g., BS Computer Science" 
                         value={formData.degree}
-                        onChange={handleInputChange}
+                        onChange={(e) => handleInputChange('degree', e.target.value)}
                         required
                       />
                     </div>
@@ -329,14 +395,13 @@ export const DeveloperSignup = () => {
                 >
                   Cancel
                 </Button>
-                <Link to="/developerdashboard">
-                  <Button 
-                    disabled={!isFormValid()}
-                    className="bg-gradient-to-r from-primary to-blue-600 hover:opacity-90 transition-opacity"
-                  >
-                    Create Profile
-                  </Button>
-                </Link>
+                <Button 
+                  type="submit"
+                  disabled={!isFormValid()}
+                  className="bg-gradient-to-r from-primary to-blue-600 hover:opacity-90 transition-opacity"
+                >
+                  Create Profile
+                </Button>
               </CardFooter>
             </Card>
           </form>
@@ -344,6 +409,7 @@ export const DeveloperSignup = () => {
       </div>
     </motion.div>
     </>
+
   );
 };
 

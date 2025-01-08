@@ -11,6 +11,12 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
+    // Developers collection
+    match /developers/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId);
+    }
+
     // Candidates collection
     match /candidates/{userId} {
       allow read: if isSignedIn();
