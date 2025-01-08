@@ -1,0 +1,59 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Candidates collection
+    match /candidates/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId);
+    }
+
+    // Recruiters collection
+    match /recruiters/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId);
+    }
+
+    // Jobs collection
+    match /jobs/{jobId} {
+      // Anyone signed in can read job listings
+      allow read: if isSignedIn();
+      // Only recruiters can create and update jobs
+      allow create: if isSignedIn() && exists(/databases/$(database)/documents/recruiters/$(request.auth.uid));
+      allow update: if isSignedIn() && 
+        exists(/databases/$(database)/documents/recruiters/$(request.auth.uid)) && 
+        resource.data.recruiterId == request.auth.uid;
+    }
+
+    // Job applications collection
+    match /applications/{applicationId} {
+      // Developers can read their own applications
+      // Recruiters can read applications for their jobs
+      allow read: if isSignedIn() && (
+        resource.data.developerId == request.auth.uid ||
+        resource.data.recruiterId == request.auth.uid
+      );
+      
+      // Developers can create applications
+      allow create: if isSignedIn() && 
+        exists(/databases/$(database)/documents/candidates/$(request.auth.uid)) &&
+        request.resource.data.developerId == request.auth.uid;
+      
+      // Recruiters can update application status
+      // Developers can update their own applications
+      allow update: if isSignedIn() && (
+        (resource.data.recruiterId == request.auth.uid) ||
+        (resource.data.developerId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coverLetter', 'resume']))
+      );
+    }
+  }
+}
