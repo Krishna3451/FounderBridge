@@ -193,12 +193,11 @@ const DeveloperDashboard = () => {
 
   const handleSubmitApplication = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedIdea || !location.state?.uid) return;
+    if (!selectedIdea) return;
 
     try {
       const result = await submitApplication({
         ideaId: selectedIdea.id,
-        developerId: location.state.uid,
         coverLetter: applicationData.coverLetter,
         resume: applicationData.resume,
       });
@@ -217,7 +216,7 @@ const DeveloperDashboard = () => {
       console.error('Error submitting application:', error);
       toast({
         title: "Error",
-        description: "Failed to submit application. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to submit application. Please try again.",
         variant: "destructive"
       });
     }

@@ -17,54 +17,23 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
-    // Candidates collection
-    match /candidates/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isOwner(userId);
-    }
-
     // Recruiters collection
     match /recruiters/{userId} {
       allow read: if isSignedIn();
       allow write: if isOwner(userId);
     }
 
-    // Jobs collection
-    match /jobs/{jobId} {
-      // Allow read access to all signed-in users
-      allow read: if true;  // Temporarily allow all reads for debugging
-      // Only recruiters can create and update jobs
-      allow create: if isSignedIn() && exists(/databases/$(database)/documents/recruiters/$(request.auth.uid));
-      allow update: if isSignedIn() && 
-        exists(/databases/$(database)/documents/recruiters/$(request.auth.uid)) && 
-        resource.data.recruiterId == request.auth.uid;
-    }
-
     // Ideas collection
     match /ideas/{ideaId} {
-      // Anyone signed in can read ideas
       allow read: if isSignedIn();
-      // Any signed-in recruiter can create ideas
-      allow create: if isSignedIn() && exists(/databases/$(database)/documents/recruiters/$(request.auth.uid));
-      // Only the idea creator can update or delete their ideas
-      allow update, delete: if isSignedIn() && 
-        exists(/databases/$(database)/documents/recruiters/$(request.auth.uid)) && 
-        resource.data.recruiterId == request.auth.uid;
+      allow write: if isSignedIn();
     }
 
-    // Job applications collection
+    // Applications collection
     match /applications/{applicationId} {
-      allow read: if isSignedIn() && (
-        resource.data.developerId == request.auth.uid ||
-        resource.data.recruiterId == request.auth.uid
-      );
-      allow create: if isSignedIn() && 
-        exists(/databases/$(database)/documents/candidates/$(request.auth.uid)) &&
-        request.resource.data.developerId == request.auth.uid;
-      allow update: if isSignedIn() && (
-        (resource.data.recruiterId == request.auth.uid) ||
-        (resource.data.developerId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coverLetter', 'resume']))
-      );
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
     }
   }
 }

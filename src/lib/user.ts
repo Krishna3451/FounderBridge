@@ -1,5 +1,6 @@
 import { getFirestore, collection, doc, addDoc, getDoc, getDocs, query, where, orderBy, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
+import { getAuth } from 'firebase/auth';
 
 interface JobData {
   recruiterId: string;
@@ -27,6 +28,7 @@ interface JobData {
 interface ApplicationData {
   ideaId: string;
   developerId: string;
+  recruiterId: string;
   coverLetter: string;
   resume: string;
   status: 'pending' | 'accepted' | 'rejected';
@@ -130,20 +132,43 @@ export const getActiveJobs = async () => {
 
 export const submitApplication = async (applicationData: Omit<ApplicationData, 'status' | 'createdAt' | 'updatedAt'>) => {
   try {
-    console.log('Submitting application...', applicationData);
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
     
+    if (!currentUser) {
+      throw new Error('You must be signed in to submit an application');
+    }
+
+    // Verify the user is a developer
+    const developerRef = doc(db, 'developers', currentUser.uid);
+    const developerSnap = await getDoc(developerRef);
+    
+    if (!developerSnap.exists()) {
+      throw new Error('Only developers can submit applications');
+    }
+
+    // Get the idea details to get the recruiterId
+    const ideaRef = doc(db, 'ideas', applicationData.ideaId);
+    const ideaDoc = await getDoc(ideaRef);
+    
+    if (!ideaDoc.exists()) {
+      throw new Error('Job posting not found');
+    }
+
+    const ideaData = ideaDoc.data();
     const timestamp = serverTimestamp();
-    const application = {
+    
+    const applicationWithMetadata = {
       ...applicationData,
+      developerId: currentUser.uid, // Ensure the correct developerId is set
+      recruiterId: ideaData.recruiterId,
       status: 'pending',
       createdAt: timestamp,
-      updatedAt: timestamp,
+      updatedAt: timestamp
     };
 
     const applicationsRef = collection(db, 'applications');
-    const docRef = await addDoc(applicationsRef, application);
-    
-    console.log('Application submitted successfully:', docRef.id);
+    const docRef = await addDoc(applicationsRef, applicationWithMetadata);
     
     return { success: true, applicationId: docRef.id };
   } catch (error) {
