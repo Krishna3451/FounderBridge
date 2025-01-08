@@ -1,69 +1,40 @@
-# Welcome to your Lovable project
+# FounderBridge
 
-## Project info
+FounderBridge is an open platform designed to connect startup founders with talented technical co-founders. Founders can create profiles, share their startup ideas, and browse a pool of developers who can apply to join their projects. Developers can showcase their portfolios and specify what they’re looking for in a partnership, whether it’s equity, experience, or mentorship. Once matched, both parties can exchange contact details to kickstart their collaboration.
 
-**URL**: https://lovable.dev/projects/e4897af1-6544-4f2f-9d25-1ce458940bd3
+---
 
-## How can I edit this code?
+## **Features**
 
-There are several ways of editing your application.
+### For Founders:
+- Create detailed profiles with startup ideas and goals.
+- Search and browse technical co-founders based on their skills.
+- Review developer portfolios (e.g., GitHub).
+- Accept or decline applications from developers.
+- Exchange contact information (e.g., WhatsApp) upon a successful match.
 
-**Use Lovable**
+### For Developers:
+- Showcase your skills and link to your portfolio (e.g., GitHub).
+- Specify partnership preferences (e.g., equity, mentorship, or experience).
+- Apply to projects that align with your expertise and interests.
+- Collaborate directly with startup founders.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e4897af1-6544-4f2f-9d25-1ce458940bd3) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## **Tech Stack**
 
-**Use your preferred IDE**
+### **Frontend:**
+- **Framework/Library:** React.js
+- **State Management:** Redux or Context API
+- **Styling:** Tailwind CSS or Material-UI
+- **Routing:** React Router
+- **Communication:** Axios for API calls
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### **Backend:**
+- **Framework:** Node.js with Express.js
+- **Authentication:** JWT (JSON Web Tokens)
+- **Database:** MongoDB or PostgreSQL
+- **File Storage:** AWS S3 or Firebase for profile images
+- **Real-time Communication (Optional):** Socket.io for live chat or notifications
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/e4897af1-6544-4f2f-9d25-1ce458940bd3) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+---
