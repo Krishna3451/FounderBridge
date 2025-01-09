@@ -8,6 +8,15 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    historyApiFallback: true, // Enable client-side routing
+    middleware: (app) => {
+      app.use((req, res, next) => {
+        if (req.method === 'GET' && !req.url.includes('.')) {
+          req.url = '/index.html';
+        }
+        next();
+      });
+    },
   },
   plugins: [
     react(),
