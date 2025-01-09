@@ -1,14 +1,9 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
-  "routes": [
-    {
-      "src": "/[^.]+",
-      "dest": "/",
-      "status": 200
-    }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/" }
   ],
-  "github": {
-    "silent": true
-  },
-  "framework": "vite"
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "cleanUrls": true
 }
